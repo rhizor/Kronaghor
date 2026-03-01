@@ -3,6 +3,7 @@ Kronaghor - Main Application
 Punto de entrada de la API FastAPI.
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,13 +15,25 @@ from backend.api.endpoints import auth, ai, expedientes, audiencias, metrics
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan events for startup and shutdown."""
+    logger.info("Iniciando Kronaghor...")
+    create_db_and_tables()
+    logger.info("Base de datos inicializada")
+    yield
+    logger.info("Apagando Kronaghor...")
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Kronaghor API",
     description="API del Asistente Jurídico Colombiano",
     version="2.0.0",
     docs="/docs",
-    redoc="/redoc"
+    redoc="/redoc",
+    lifespan=lifespan
 )
 
 # CORS
@@ -31,14 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Eventos al iniciar."""
-    logger.info("Iniciando Kronaghor...")
-    create_db_and_tables()
-    logger.info("Base de datos inicializada")
 
 
 @app.get("/")
