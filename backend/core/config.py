@@ -19,7 +19,19 @@ class Settings(BaseSettings):
     SECRET_KEY: str = ""  # Must be set in production
     DEBUG: bool = False
     
-    # Database
+    # Test database
+TEST_DATABASE_URL = "sqlite:///./test_kronaghor.db"
+
+class Settings(BaseSettings):
+    """Configuración de la aplicación."""
+    
+    # API
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8000
+    SECRET_KEY: str = ""  # Must be set in production
+    DEBUG: bool = False
+    
+    # Database - usar test db si existe
     DATABASE_URL: str = "sqlite:///./kronaghor.db"
     
     # AI Providers
@@ -37,9 +49,7 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {"env_file": ".env", "case_sensitive": True}
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -52,3 +62,9 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return os.getenv("ENV", "dev") == "production"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Obtener configuración cacheada."""
+    return Settings()
