@@ -7,6 +7,7 @@ import os
 from functools import lru_cache
 from pydantic_settings import BaseSettings
 from typing import Optional
+import secrets
 
 
 class Settings(BaseSettings):
@@ -15,8 +16,8 @@ class Settings(BaseSettings):
     # API
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    SECRET_KEY: str = "change-this-in-production"
-    DEBUG: bool = True
+    SECRET_KEY: str = ""  # Must be set in production
+    DEBUG: bool = False
     
     # Database
     DATABASE_URL: str = "sqlite:///./kronaghor.db"
@@ -39,9 +40,15 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
-
-
-@lru_cache()
-def get_settings() -> Settings:
-    """Obtener configuración cacheada."""
-    return Settings()
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Generate random key if not set (dev only)
+        if not self.SECRET_KEY:
+            if os.getenv("ENV", "dev") == "production":
+                raise ValueError("SECRET_KEY must be set in production")
+            self.SECRET_KEY = secrets.token_urlsafe(32)
+    
+    @property
+    def is_production(self) -> bool:
+        return os.getenv("ENV", "dev") == "production"
